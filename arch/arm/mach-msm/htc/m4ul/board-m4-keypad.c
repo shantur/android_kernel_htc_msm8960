@@ -29,10 +29,6 @@
 
 static struct gpio_event_direct_entry m4_keypad_input_map[] = {
 	{
-		.gpio = MSM_PWR_KEY_MSMz,
-		.code = KEY_POWER,
-	},
-	{
 		.gpio = MSM_VOL_UPz,
 		.code = KEY_VOLUMEUP,
 	},
