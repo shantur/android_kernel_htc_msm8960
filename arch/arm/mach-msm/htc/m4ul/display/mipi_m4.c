@@ -120,8 +120,6 @@ static unsigned char m4_shrink_pwm(int val)
 	} else if (val > BRI_SETTING_MAX)
 			shrink_br = pwm_max;
 
-	pr_info("brightness orig=%d, transformed=%d\n", val, shrink_br);
-
 	return shrink_br;
 }
 
