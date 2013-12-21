@@ -165,6 +165,7 @@ static struct pm8xxx_adc_properties pm8xxx_adc_data = {
 	.bipolar                = 0,
 };
 
+#if 0
 static const struct pm8xxx_adc_map_pt m4_adcmap_btm_threshold[] = {
 	{-200,	1671},
 	{-190,	1663},
@@ -272,13 +273,13 @@ static struct pm8xxx_adc_map_table pm8xxx_adcmap_btm_table = {
 	.table = m4_adcmap_btm_threshold,
 	.size = ARRAY_SIZE(m4_adcmap_btm_threshold),
 };
+#endif
 
 static struct pm8xxx_adc_platform_data pm8xxx_adc_pdata = {
 	.adc_channel            = pm8xxx_adc_channels_data,
 	.adc_num_board_channel  = ARRAY_SIZE(pm8xxx_adc_channels_data),
 	.adc_prop               = &pm8xxx_adc_data,
 	.adc_mpp_base		= PM8038_MPP_PM_TO_SYS(1),
-	.adc_map_btm_table	= &pm8xxx_adcmap_btm_table,
 	.pm8xxx_adc_device_register	= pm8xxx_adc_device_driver_register,
 };
 
