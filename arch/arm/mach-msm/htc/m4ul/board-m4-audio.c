@@ -1838,11 +1838,9 @@ static void m4_set_q6_effect_mode(int mode)
 	atomic_set(&q6_effect_mode, mode);
 }
 
-static int m4_get_q6_effect_mode(void)
+int m4_get_24b_audio(void)
 {
-	int mode = atomic_read(&q6_effect_mode);
-	pr_info("%s: mode %d\n", __func__, mode);
-	return mode;
+	return 1;
 }
 
 static struct acoustic_ops acoustic = {
@@ -1852,6 +1850,14 @@ static struct acoustic_ops acoustic = {
 	.enable_digital_mic = m4_enable_digital_mic,
 };
 
+#ifdef USE_HTC_Q6
+static int m4_get_q6_effect_mode(void)
+{
+        int mode = atomic_read(&q6_effect_mode);
+        pr_info("%s: mode %d\n", __func__, mode);
+        return mode;
+}
+
 static struct q6asm_ops qops = {
 	.get_q6_effect = m4_get_q6_effect_mode,
 };
@@ -1859,6 +1865,11 @@ static struct q6asm_ops qops = {
 static struct msm_pcm_routing_ops rops = {
 	.get_q6_effect = m4_get_q6_effect_mode,
 };
+
+static struct msm_compr_q6_ops cops = {
+	.get_24b_audio = m4_get_24b_audio,
+};
+#endif
 
 static int __init m4_audio_init(void)
 {
@@ -1915,10 +1926,13 @@ static int __init m4_audio_init(void)
 		GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
 	gpio_set_value(MSM_AUD_DMIC1_SEL, 0);
 
+#ifdef USE_HTC_Q6
 	htc_register_q6asm_ops(&qops);
 	htc_register_pcm_routing_ops(&rops);
+	htc_register_compr_q6_ops(&cops);
+#endif
 	acoustic_register_ops(&acoustic);
-
+	pr_info("%s", __func__);
 	return ret;
 }
 module_init(m4_audio_init);
