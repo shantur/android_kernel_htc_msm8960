@@ -926,7 +926,7 @@ static int msm_compr_hw_params(struct snd_pcm_substream *substream,
 	if (runtime->format == SNDRV_PCM_FORMAT_S24_LE)
 		bit_width = 24;
 
-#ifdef CONFIG_MACH_M7_UL
+#if defined(CONFIG_MACH_M7_UL) || defined(CONFIG_MACH_MONARUDO)
         bit_width = 24;
 #endif
 
