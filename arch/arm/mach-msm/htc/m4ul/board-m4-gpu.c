@@ -166,8 +166,8 @@ static struct platform_device device_kgsl_3d0 = {
 
 void __init m4_init_gpu(void)
 {
-	unsigned int version = socinfo_get_version();
-
+/*	unsigned int version = socinfo_get_version();
+*/
 	/* Set the turbo speed for the AA and AB respectively */
 
 	if (cpu_is_msm8930aa())
@@ -179,13 +179,15 @@ void __init m4_init_gpu(void)
 
 	/* Set up the chip ID based on the SoC version */
 
-	if (cpu_is_msm8930ab())
+/*	if (cpu_is_msm8930ab())
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 3);
 	else if ((SOCINFO_VERSION_MAJOR(version) == 1) &&
 		(SOCINFO_VERSION_MINOR(version) == 2))
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 2);
 	else
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 0);
+*/
+	kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 0);
 
 	platform_device_register(&device_kgsl_3d0);
 }
