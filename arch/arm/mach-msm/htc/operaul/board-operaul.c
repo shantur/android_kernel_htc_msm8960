@@ -3336,11 +3336,11 @@ struct platform_device device_htc_ramdump = {
 };
 
 static struct platform_device *common_devices[] __initdata = {
-	&msm8960_device_acpuclk,
+	&msm8930_device_acpuclk,
 	&msm8960_device_dmov,
 	&msm_device_smd,
 	&msm8960_device_uart_gsbi3,
-	&msm8960_device_uart_gsbi8,
+	//	&msm8960_device_uart_gsbi8, // COMMENT AS IT BROKE ON M4
 	
 	&msm_device_saw_core0,
 	&msm_device_saw_core1,
