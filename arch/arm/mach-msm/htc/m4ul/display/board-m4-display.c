@@ -380,7 +380,7 @@ static struct platform_device mipi_dsi_m4_panel_device = {
 	}
 };
 
-static void __init msm8930_set_display_params(char *prim_panel, char *ext_panel)
+static void __init msm8930_set_display_params(char *prim_panel)
 {
 	if (strnlen(prim_panel, PANEL_NAME_MAX_LEN)) {
 		strlcpy(msm_fb_pdata.prim_panel_name, prim_panel,
@@ -389,12 +389,6 @@ static void __init msm8930_set_display_params(char *prim_panel, char *ext_panel)
 			msm_fb_pdata.prim_panel_name);
 	}
 
-	if (strnlen(ext_panel, PANEL_NAME_MAX_LEN)) {
-		strlcpy(msm_fb_pdata.ext_panel_name, ext_panel,
-			PANEL_NAME_MAX_LEN);
-		pr_debug("msm_fb_pdata.ext_panel_name %s\n",
-			msm_fb_pdata.ext_panel_name);
-	}
 }
 
 void __init m4_init_fb(void)
@@ -402,7 +396,7 @@ void __init m4_init_fb(void)
         if (system_rev >= 1)
           m4_pdata.enable_wled_bl_ctrl = 0x0;
 
-	msm8930_set_display_params("mipi_m4", "hdmi_msm");
+	msm8930_set_display_params("mipi_m4");
 	platform_device_register(&msm_fb_device);
 #ifdef CONFIG_FB_MSM_WRITEBACK_MSM_PANEL
 	platform_device_register(&wfd_panel_device);

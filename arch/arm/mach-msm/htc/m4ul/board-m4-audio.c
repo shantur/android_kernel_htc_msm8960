@@ -1554,7 +1554,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_id = MSM_BACKEND_DAI_INT_FM_TX,
 		.be_hw_params_fixup = msm8930_be_hw_params_fixup,
 	},
-	
 	{
 		.name = LPASS_BE_HDMI,
 		.stream_name = "HDMI Playback",
@@ -1615,7 +1614,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_hw_params_fixup = msm8930_be_hw_params_fixup,
 		.ops = &msm8930_i2s_be_ops,
 	},
-	
 	{
 		.name = LPASS_BE_AFE_PCM_RX,
 		.stream_name = "AFE Playback",
@@ -1639,7 +1637,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_id = MSM_BACKEND_DAI_AFE_PCM_TX,
 		.be_hw_params_fixup = msm8930_proxy_be_hw_params_fixup,
 	},
-	
 	{
 		.name = LPASS_BE_AUXPCM_RX,
 		.stream_name = "AUX PCM Playback",
@@ -1664,7 +1661,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_hw_params_fixup = msm8930_auxpcm_be_params_fixup,
 		.ops = &msm8930_auxpcm_be_ops,
 	},
-	
 	{
 		.name = LPASS_BE_VOICE_PLAYBACK_TX,
 		.stream_name = "Voice Farend Playback",
@@ -1676,7 +1672,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_id = MSM_BACKEND_DAI_VOICE_PLAYBACK_TX,
 		.be_hw_params_fixup = msm8930_be_hw_params_fixup,
 	},
-	
 	{
 		.name = LPASS_BE_INCALL_RECORD_TX,
 		.stream_name = "Voice Uplink Capture",
@@ -1688,7 +1683,6 @@ static struct snd_soc_dai_link msm8930_dai[] = {
 		.be_id = MSM_BACKEND_DAI_INCALL_RECORD_TX,
 		.be_hw_params_fixup = msm8930_be_hw_params_fixup,
 	},
-	
 	{
 		.name = LPASS_BE_INCALL_RECORD_RX,
 		.stream_name = "Voice Downlink Capture",
