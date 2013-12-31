@@ -88,6 +88,12 @@ static struct resource kgsl_3d0_resources[] = {
 	{
 		.name = KGSL_3D0_REG_MEMORY,
 		.start = 0x04300000, /* GFX3D address */
+		.end = 0x0430ffff,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.name = KGSL_3D0_SHADER_MEMORY,
+		.start = 0x4310000, /* Shader Mem address */
 		.end = 0x0431ffff,
 		.flags = IORESOURCE_MEM,
 	},
@@ -139,7 +145,6 @@ static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 	.num_levels = 4,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/12,
-	.nap_allowed = true,
 	.strtstp_sleepwake = false,
 	.clk_map = KGSL_CLK_CORE | KGSL_CLK_IFACE | KGSL_CLK_MEM_IFACE,
 #ifdef CONFIG_MSM_BUS_SCALING
@@ -161,7 +166,7 @@ static struct platform_device device_kgsl_3d0 = {
 
 void __init tc2_init_gpu(void)
 {
-	unsigned int version = socinfo_get_version();
+  //	unsigned int version = socinfo_get_version();
 
 	/* Set the turbo speed for the AA and AB respectively */
 
@@ -173,7 +178,7 @@ void __init tc2_init_gpu(void)
 	}
 
 	/* Set up the chip ID based on the SoC version */
-
+#if 0
 	if (cpu_is_msm8930ab())
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 3);
 	else if ((SOCINFO_VERSION_MAJOR(version) == 1) &&
@@ -181,7 +186,9 @@ void __init tc2_init_gpu(void)
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 2);
 	else
 		kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 0);
-
+#else
+	kgsl_3d0_pdata.chipid = ADRENO_CHIPID(3, 0, 5, 0);
+#endif
 	platform_device_register(&device_kgsl_3d0);
 }
 
