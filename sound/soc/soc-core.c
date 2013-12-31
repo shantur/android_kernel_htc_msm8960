@@ -912,7 +912,6 @@ find_codec:
 	}
 	dev_dbg(card->dev, "CODEC %s not registered\n",
 			dai_link->codec_name);
-
 find_platform:
 	/* do we need a platform? */
 	if (rtd->platform)
