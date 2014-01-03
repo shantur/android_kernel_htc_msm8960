@@ -1320,6 +1320,7 @@ static struct acoustic_ops acoustic = {
 	.enable_digital_mic = opera_enable_digital_mic,
 };
 
+#ifdef USE_HTC_Q6
 static struct q6asm_ops qops = {
 	.get_q6_effect = opera_get_q6_effect_mode,
 };
@@ -1327,6 +1328,7 @@ static struct q6asm_ops qops = {
 static struct msm_pcm_routing_ops rops = {
 	.get_q6_effect = opera_get_q6_effect_mode,
 };
+#endif
 
 static int __init opera_audio_init(void)
 {
@@ -1352,8 +1354,10 @@ static int __init opera_audio_init(void)
 		return ret;
 	}
 
+#ifdef USE_HTC_Q6
 	htc_register_q6asm_ops(&qops);
 	htc_register_pcm_routing_ops(&rops);
+#endif
 	acoustic_register_ops(&acoustic);
 	mutex_init(&aux_pcm_mutex);
 
