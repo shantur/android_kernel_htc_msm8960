@@ -171,7 +171,7 @@ struct sx150x_platform_data msm8930_sx150x_data[] = {
 #define MSM_ION_MM_SIZE            0x3800000 /* Need to be multiple of 64K */
 #define MSM_ION_SF_SIZE            0x0
 #define MSM_ION_QSECOM_SIZE	0x780000 /* (7.5MB) */
-#define MSM_ION_HEAP_NUM	7
+#define MSM_ION_HEAP_NUM	8
 #else
 #define MSM_ION_SF_SIZE		MSM_PMEM_SIZE
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
@@ -379,34 +379,29 @@ static int msm8930_paddr_to_memtype(unsigned int paddr)
 #define FMEM_ENABLED 0
 #ifdef CONFIG_ION_MSM
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-static struct ion_cp_heap_pdata cp_mm_msm8930_ion_pdata = {
+static struct ion_cp_heap_pdata cp_mm_opera_ion_pdata = {
 	.permission_type = IPT_TYPE_MM_CARVEOUT,
 	.align = PAGE_SIZE,
 	.reusable = FMEM_ENABLED,
 	.mem_is_fmem = FMEM_ENABLED,
 	.fixed_position = FIXED_MIDDLE,
-	.no_nonsecure_alloc = 1,
-#ifdef CONFIG_CMA
-	.is_cma = 1,
-#endif
 };
 
-static struct ion_cp_heap_pdata cp_mfc_msm8930_ion_pdata = {
+static struct ion_cp_heap_pdata cp_mfc_opera_ion_pdata = {
 	.permission_type = IPT_TYPE_MFC_SHAREDMEM,
 	.align = PAGE_SIZE,
 	.reusable = 0,
 	.mem_is_fmem = FMEM_ENABLED,
 	.fixed_position = FIXED_HIGH,
-	.no_nonsecure_alloc = 1,
 };
 
-static struct ion_co_heap_pdata co_msm8930_ion_pdata = {
+static struct ion_co_heap_pdata co_opera_ion_pdata = {
 	.adjacent_mem_id = INVALID_HEAP_ID,
 	.align = PAGE_SIZE,
 	.mem_is_fmem = 0,
 };
 
-static struct ion_co_heap_pdata fw_co_msm8930_ion_pdata = {
+static struct ion_co_heap_pdata fw_co_opera_ion_pdata = {
 	.adjacent_mem_id = ION_CP_MM_HEAP_ID,
 	.align = SZ_128K,
 	.mem_is_fmem = FMEM_ENABLED,
@@ -415,39 +410,6 @@ static struct ion_co_heap_pdata fw_co_msm8930_ion_pdata = {
 #endif
 
 
-static u64 msm_dmamask = DMA_BIT_MASK(32);
-
-static struct platform_device ion_mm_heap_device = {
-	.name = "ion-mm-heap-device",
-	.id = -1,
-	.dev = {
-		.dma_mask = &msm_dmamask,
-		.coherent_dma_mask = DMA_BIT_MASK(32),
-	}
-};
-
-#ifdef CONFIG_CMA
-static struct platform_device ion_adsp_heap_device = {
-	.name = "ion-adsp-heap-device",
-	.id = -1,
-	.dev = {
-		.dma_mask = &msm_dmamask,
-		.coherent_dma_mask = DMA_BIT_MASK(32),
-	}
-};
-#endif
-
-/**
- * These heaps are listed in the order they will be allocated. Due to
- * video hardware restrictions and content protection the FW heap has to
- * be allocated adjacent (below) the MM heap and the MFC heap has to be
- * allocated after the MM heap to ensure MFC heap is not more than 256MB
- * away from the base address of the FW heap.
- * However, the order of FW heap and MM heap doesn't matter since these
- * two heaps are taken care of by separate code to ensure they are adjacent
- * to each other.
- * Don't swap the order unless you know what you are doing!
- */
 struct ion_platform_heap msm8930_heaps[] = {
 		{
 			.id	= ION_SYSTEM_HEAP_ID,
@@ -461,8 +423,7 @@ struct ion_platform_heap msm8930_heaps[] = {
 			.name	= ION_MM_HEAP_NAME,
 			.size	= MSM_ION_MM_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &cp_mm_msm8930_ion_pdata,
-			.priv	= &ion_mm_heap_device.dev
+			.extra_data = (void *) &cp_mm_opera_ion_pdata,
 		},
 		{
 			.id	= ION_MM_FIRMWARE_HEAP_ID,
@@ -470,7 +431,7 @@ struct ion_platform_heap msm8930_heaps[] = {
 			.name	= ION_MM_FIRMWARE_HEAP_NAME,
 			.size	= MSM_ION_MM_FW_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &fw_co_msm8930_ion_pdata,
+			.extra_data = (void *) &fw_co_opera_ion_pdata,
 		},
 		{
 			.id	= ION_CP_MFC_HEAP_ID,
@@ -478,18 +439,16 @@ struct ion_platform_heap msm8930_heaps[] = {
 			.name	= ION_MFC_HEAP_NAME,
 			.size	= MSM_ION_MFC_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &cp_mfc_msm8930_ion_pdata,
+			.extra_data = (void *) &cp_mfc_opera_ion_pdata,
 		},
-#ifndef CONFIG_MSM_IOMMU
 		{
 			.id	= ION_SF_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
 			.name	= ION_SF_HEAP_NAME,
 			.size	= MSM_ION_SF_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &co_msm8930_ion_pdata,
+			.extra_data = (void *) &co_opera_ion_pdata,
 		},
-#endif
 		{
 			.id	= ION_IOMMU_HEAP_ID,
 			.type	= ION_HEAP_TYPE_IOMMU,
@@ -501,7 +460,7 @@ struct ion_platform_heap msm8930_heaps[] = {
 			.name	= ION_QSECOM_HEAP_NAME,
 			.size	= MSM_ION_QSECOM_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &co_msm8930_ion_pdata,
+			.extra_data = (void *) &co_opera_ion_pdata,
 		},
 		{
 			.id	= ION_AUDIO_HEAP_ID,
@@ -509,19 +468,8 @@ struct ion_platform_heap msm8930_heaps[] = {
 			.name	= ION_AUDIO_HEAP_NAME,
 			.size	= MSM_ION_AUDIO_SIZE,
 			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &co_msm8930_ion_pdata,
+			.extra_data = (void *) &co_opera_ion_pdata,
 		},
-#ifdef CONFIG_CMA
-		{
-			.id	= ION_ADSP_HEAP_ID,
-			.type	= ION_HEAP_TYPE_DMA,
-			.name	= ION_ADSP_HEAP_NAME,
-			.size	= MSM_ION_ADSP_SIZE,
-			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &co_msm8930_ion_pdata,
-			.priv	= &ion_adsp_heap_device.dev,
-		},
-#endif
 #endif
 };
 
@@ -725,7 +673,7 @@ static void __init reserve_ion_memory(void)
 				heap->base = fixed_middle_start;
 				if (middle_use_cma)
 					dma_declare_contiguous(
-						&ion_mm_heap_device.dev,
+						heap->priv,
 						heap->size,
 						fixed_middle_start,
 						0xa0000000);
