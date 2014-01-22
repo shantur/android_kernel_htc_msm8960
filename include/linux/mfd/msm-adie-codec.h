@@ -65,7 +65,7 @@ struct adie_codec_action_unit {
 struct adie_codec_hwsetting_entry{
 	struct adie_codec_action_unit *actions;
 	u32 action_sz;
-#ifdef CONFIG_MSM8X60_AUDIO_1X
+#if defined(CONFIG_MSM8X60_AUDIO) && defined(CONFIG_MACH_HTC)
 	struct adie_codec_action_unit *midi_action;
 	u32 midi_action_sz;
 	struct adie_codec_action_unit *voc_action;
