@@ -109,7 +109,6 @@
 #include <mach/htc_headset_gpio.h>
 #include <mach/htc_headset_pmic.h>
 #include <mach/htc_headset_8x60.h>
-#include <mach/htc_headset_one_wire.h>
 
 #ifdef CONFIG_FB_MSM_HDMI_MHL
 #include <mach/mhl.h>
@@ -1145,7 +1144,7 @@ static void __init msm8x60_init_dsps(void)
 
 #define MSM_PMEM_KERNEL_EBI1_SIZE  0x600000
 #define MSM_PMEM_ADSP_SIZE         0x4200000
-#define MSM_PMEM_AUDIO_SIZE        0x28B000
+#define MSM_PMEM_AUDIO_SIZE        0x20000
 
 #define MSM_SMI_BASE          0x38000000
 #define MSM_SMI_SIZE          0x4000000
@@ -1172,9 +1171,8 @@ static void __init msm8x60_init_dsps(void)
 #endif
 
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-#define MSM_ION_AUDIO_SIZE	MSM_PMEM_AUDIO_SIZE
-//#define MSM_ION_HEAP_NUM	9
-#define MSM_ION_HEAP_NUM	8
+#define MSM_ION_AUDIO_SIZE      0x28B000
+#define MSM_ION_HEAP_NUM	9
 #define MSM_HDMI_PRIM_ION_SF_SIZE MSM_HDMI_PRIM_PMEM_SF_SIZE
 static unsigned msm_ion_sf_size = MSM_ION_SF_SIZE;
 #else
@@ -1669,12 +1667,13 @@ static struct platform_device htc_headset_gpio = {
 
 static struct htc_headset_pmic_platform_data htc_headset_pmic_data = {
 	.driver_flag		= 0,
-	.hpin_gpio		= PYRAMID_GPIO_AUD_HP_DET,
+	.hpin_gpio		= 0,
 	.hpin_irq		= 0,
-	.key_gpio		= PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_REMO_PRES),
+	.key_gpio		= 0,
 	.key_irq		= 0,
 	.key_enable_gpio	= 0,
 	.adc_mic_bias		= {0, 0},
+	.adc_remote		= {0, 0, 0, 0, 0, 0},
 };
 
 static struct platform_device htc_headset_pmic = {
@@ -1690,7 +1689,7 @@ static struct htc_headset_8x60_platform_data htc_headset_8x60_data = {
 	.adc_amux	= PM_MPP_AIN_AMUX_CH5,
 	.adc_mic_bias	= {HS_DEF_MIC_ADC_15_BIT_MIN,
 			   HS_DEF_MIC_ADC_15_BIT_MAX},
-	.adc_remote	= {0, 1721, 1722, 2927, 2928, 6300},
+	.adc_remote	= {0, 722, 723, 2746, 2747, 6603},
 };
 
 static struct platform_device htc_headset_8x60 = {
@@ -1710,22 +1709,27 @@ static struct platform_device *headset_devices[] = {
 static struct headset_adc_config htc_headset_mgr_config[] = {
 	{
 		.type = HEADSET_MIC,
-		.adc_max = 29158,
-		.adc_min = 22766,
+		.adc_max = 28920,
+		.adc_min = 21705,
 	},
 	{
 		.type = HEADSET_BEATS,
-		.adc_max = 22765,
-		.adc_min = 16698,
+		.adc_max = 21704,
+		.adc_min = 14605,
 	},
 	{
 		.type = HEADSET_BEATS_SOLO,
-		.adc_max = 16697,
-		.adc_min = 7801,
+		.adc_max = 14604,
+		.adc_min = 8676,
+	},
+	{
+		.type = HEADSET_NO_MIC, /* HEADSET_INDICATOR */
+		.adc_max = 8675,
+		.adc_min = 5784,
 	},
 	{
 		.type = HEADSET_NO_MIC,
-		.adc_max = 7800,
+		.adc_max = 5783,
 		.adc_min = 0,
 	},
 };
@@ -2038,7 +2042,6 @@ struct ion_platform_heap msm8x60_heaps [] = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *) &co_ion_pdata,
 		},
-#if 0
 		{
 			.id	= ION_AUDIO_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
@@ -2047,7 +2050,6 @@ struct ion_platform_heap msm8x60_heaps [] = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *)&co_ion_pdata,
 		},
-#endif
 #endif
 };
 
@@ -2075,6 +2077,8 @@ static struct platform_device *pyramid_devices[] __initdata = {
 	&msm_pil_q6v3,
 	&msm_pil_modem,
 	&msm_pil_tzapps,
+	&msm_pil_dsps,
+	&msm_pil_vidc,
 #ifdef CONFIG_QSEECOM
 	&qseecom_device,
 #endif
@@ -2239,6 +2243,7 @@ static void __init reserve_ion_memory(void)
 	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_CAMERA_SIZE;
 	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_WB_SIZE;
 	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_PMEM_AUDIO_SIZE;
 #endif
 }
 
@@ -2498,7 +2503,7 @@ static struct i2c_board_info wm8903_codec_i2c_info[] = {
 };
 #endif
 
-#ifdef CONFIG_MSM8X60_AUDIO_1X
+#ifdef CONFIG_MSM8X60_AUDIO
 static uint32_t msm_spi_gpio[] = {
 	GPIO_CFG(PYRAMID_SPI_DO,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 	GPIO_CFG(PYRAMID_SPI_DI,  1, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
@@ -2772,7 +2777,7 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 		ARRAY_SIZE(msm_tps_65200_boardinfo),
 	},
 #endif
-#if defined(CONFIG_MSM8X60_AUDIO_1X)
+#if defined(CONFIG_MSM8X60_AUDIO)
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID | I2C_DRAGON,
 		MSM_GSBI7_QUP_I2C_BUS_ID,
@@ -3070,7 +3075,7 @@ static void __init pyramid_init(void)
 
 	BUG_ON(msm_pm_boot_init(&msm_pm_boot_pdata));
 
-#ifdef CONFIG_MSM8X60_AUDIO_1X
+#ifdef CONFIG_MSM8X60_AUDIO
 	spi_register_board_info(msm_spi_board_info, ARRAY_SIZE(msm_spi_board_info));
 	gpio_tlmm_config(msm_spi_gpio[0], GPIO_CFG_ENABLE);
 	gpio_tlmm_config(msm_spi_gpio[1], GPIO_CFG_ENABLE);

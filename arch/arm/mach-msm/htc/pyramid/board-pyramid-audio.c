@@ -42,6 +42,12 @@ static int curr_rx_mode;
 static atomic_t aic3254_ctl = ATOMIC_INIT(0);
 static atomic_t q6_effect_mode = ATOMIC_INIT(-1);
 
+static uint32_t msm_snddev_gpio[] = {
+	GPIO_CFG(108, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(109, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(110, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+};
+
 #define BIT_SPEAKER	(1 << 0)
 #define BIT_HEADSET	(1 << 1)
 #define BIT_RECEIVER	(1 << 2)
@@ -64,16 +70,12 @@ void pyramid_snddev_poweramp_on(int en)
 	pr_info("%s %d\n", __func__, en);
 	if (en) {
 		msleep(50);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 1);
 		set_speaker_amp(1);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode |= BIT_SPEAKER;
 	} else {
 		set_speaker_amp(0);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 0);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode &= ~BIT_SPEAKER;
@@ -85,16 +87,12 @@ void pyramid_snddev_hsed_pamp_on(int en)
 	pr_info("%s %d\n", __func__, en);
 	if (en) {
 		msleep(50);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 1);
 		set_headset_amp(1);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode |= BIT_HEADSET;
 	} else {
 		set_headset_amp(0);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 0);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode &= ~BIT_HEADSET;
@@ -106,8 +104,6 @@ void pyramid_snddev_hs_spk_pamp_on(int en)
 	pr_info("%s %d\n", __func__, en);
 	if (en) {
 		msleep(50);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 1);
 		set_speaker_headset_amp(1);
 		if (!atomic_read(&aic3254_ctl)) {
@@ -116,8 +112,6 @@ void pyramid_snddev_hs_spk_pamp_on(int en)
 		}
 	} else {
 		set_speaker_headset_amp(0);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 0);
 		if (!atomic_read(&aic3254_ctl)) {
 			curr_rx_mode &= ~BIT_SPEAKER;
@@ -136,11 +130,6 @@ void pyramid_snddev_receiver_pamp_on(int en)
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode &= ~BIT_RECEIVER;
 	}
-}
-
-void pyramid_snddev_bt_sco_pamp_on(int en)
-{
-	/* to be implemented */
 }
 
 /* power on/off externnal mic bias */
@@ -188,8 +177,6 @@ void pyramid_snddev_bmic_pamp_on(int en)
 			pr_err("%s: Enabling back mic power failed\n", __func__);
 
 		/* select internal mic path */
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_MIC_SEL),
-						"AUD_MIC_SEL");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_MIC_SEL), 0);
 	} else {
 		ret = pm8058_micbias_enable(OTHC_MICBIAS_1, OTHC_SIGNAL_OFF);
@@ -204,8 +191,6 @@ void pyramid_snddev_emic_pamp_on(int en)
 
 	if (en) {
 		/* select external mic path */
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_MIC_SEL),
-						"AUD_MIC_SEL");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_MIC_SEL), 1);
 	}
 }
@@ -243,16 +228,12 @@ void pyramid_snddev_fmspk_pamp_on(int en)
 {
 	pr_info("%s %d\n", __func__, en);
 	if (en) {
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 1);
 		set_speaker_amp(1);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode |= BIT_FM_SPK;
 	} else {
 		set_speaker_amp(0);
-		gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN),
-						"AUD_HP_EN");
 		gpio_direction_output(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), 0);
 		if (!atomic_read(&aic3254_ctl))
 			curr_rx_mode &= ~BIT_FM_SPK;
@@ -313,6 +294,11 @@ void pyramid_rx_amp_enable(int en)
 int pyramid_support_aic3254(void)
 {
 	return 1;
+}
+
+int pyramid_support_adie(void)
+{
+	return 0;
 }
 
 int pyramid_support_back_mic(void)
@@ -386,7 +372,6 @@ static struct q6v2audio_analog_ops ops = {
 	.headset_enable	        = pyramid_snddev_hsed_pamp_on,
 	.handset_enable	        = pyramid_snddev_receiver_pamp_on,
 	.headset_speaker_enable	= pyramid_snddev_hs_spk_pamp_on,
-	.bt_sco_enable	        = pyramid_snddev_bt_sco_pamp_on,
 	.int_mic_enable         = pyramid_snddev_imic_pamp_on,
 	.back_mic_enable        = pyramid_snddev_bmic_pamp_on,
 	.ext_mic_enable         = pyramid_snddev_emic_pamp_on,
@@ -398,11 +383,8 @@ static struct q6v2audio_analog_ops ops = {
 
 static struct q6v2audio_icodec_ops iops = {
 	.support_aic3254 = pyramid_support_aic3254,
+	.support_adie = pyramid_support_adie,
 	.is_msm_i2s_slave = pyramid_is_msm_i2s_slave,
-};
-
-static struct q6v2audio_ecodec_ops eops = {
-	.bt_sco_enable  = pyramid_snddev_bt_sco_pamp_on,
 };
 
 static struct aic3254_ctl_ops cops = {
@@ -420,6 +402,7 @@ static struct aic3254_ctl_ops cops = {
 static struct acoustic_ops acoustic = {
 	.enable_mic_bias = pyramid_mic_enable,
 	.support_aic3254 = pyramid_support_aic3254,
+	.support_adie = pyramid_support_adie,
 	.support_back_mic = pyramid_support_back_mic,
 	.get_acoustic_tables = pyramid_get_acoustic_tables,
 	.support_beats = pyramid_support_beats,
@@ -437,29 +420,36 @@ static struct q6v2audio_aic3254_ops aops = {
        .aic3254_set_mode = pyramid_aic3254_set_mode,
 };
 
-static struct q6asm_ops qops = {
-	.get_q6_effect = pyramid_get_q6_effect_mode,
-};
+void pyramid_audio_gpios_init(void)
+{
+	pr_info("%s\n", __func__);
+	gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_HP_EN), "AUD_SPK_ENO");
+	gpio_request(PM8058_GPIO_PM_TO_SYS(PYRAMID_AUD_MIC_SEL), "AUD_HANDSET_ENO");
+}
 
 void __init pyramid_audio_init(void)
 {
+        int i = 0;
+
 	mutex_init(&bt_sco_lock);
 	mutex_init(&mic_lock);
 
-#ifdef CONFIG_MSM8X60_AUDIO_1X
+#ifdef CONFIG_MSM8X60_AUDIO
 	pr_info("%s\n", __func__);
 	htc_8x60_register_analog_ops(&ops);
 	htc_8x60_register_icodec_ops(&iops);
-	htc_8x60_register_ecodec_ops(&eops);
 	acoustic_register_ops(&acoustic);
 	htc_8x60_register_aic3254_ops(&aops);
-	htc_8x60_register_q6asm_ops(&qops);
 	msm_set_voc_freq(8000, 8000);
 #endif
 
 	aic3254_register_ctl_ops(&cops);
 
+	for (i = 0 ; i < ARRAY_SIZE(msm_snddev_gpio); i++)
+		gpio_tlmm_config(msm_snddev_gpio[i], GPIO_CFG_DISABLE);
+
 	/* PMIC GPIO Init (See board-pyramid.c) */
+        pyramid_audio_gpios_init();
 
 	/* Reset AIC3254 */
 	pyramid_reset_3254();
