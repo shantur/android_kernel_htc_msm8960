@@ -24,15 +24,15 @@
 #include <mach/gpio.h>
 #include <mach/dal.h>
 #include <linux/tpa2051d3.h>
-#include <mach/qdsp6v2_1x/snddev_icodec.h>
-#include <mach/qdsp6v2_1x/snddev_ecodec.h>
-#include <mach/qdsp6v2_1x/snddev_hdmi.h>
-#include <mach/qdsp6v2_1x/apr_audio.h>
-#include <mach/qdsp6v2_1x/q6asm.h>
+#include "qdsp6v2/snddev_icodec.h"
+#include "qdsp6v2/snddev_ecodec.h"
+#include "qdsp6v2/snddev_hdmi.h"
+#include <mach/qdsp6v2/audio_dev_ctl.h>
+#include <sound/apr_audio.h>
+#include <sound/q6asm.h>
 #include <mach/htc_acoustic_8x60.h>
 
 #include "board-pyramid-audio-data.h"
-#include <mach/qdsp6v2_1x/audio_dev_ctl.h>
 
 extern unsigned int system_rev;
 
