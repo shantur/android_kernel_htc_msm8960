@@ -77,7 +77,9 @@
 #include <mach/msm_iomap.h>
 #include <mach/msm_memtypes.h>
 #include <asm/mach/mmc.h>
+#ifdef CONFIG_HTC_BATT_8x60
 #include <mach/htc_battery_8x60.h>
+#endif
 #ifdef CONFIG_TPS65200
 #include <linux/tps65200.h>
 #endif
@@ -139,8 +141,6 @@
 extern int ps_type;
 
 #define MSM_SHARED_RAM_PHYS 0x40000000
-
-#define DSPS_PIL_GENERIC_NAME		"dsps"
 
 static unsigned int engineerid, mem_size_mb;
 
@@ -586,7 +586,6 @@ static struct platform_device htc_battery_pdev = {
 };
 #endif
 
-
 #ifdef CONFIG_FLASHLIGHT_AAT1271
 static void config_flashlight_gpios(void)
 {
@@ -981,7 +980,7 @@ static struct i2c_board_info msm_tps_65200_boardinfo[] __initdata = {
 
 #ifdef CONFIG_I2C_QUP
 static uint32_t gsbi4_gpio_table[] = {
-	GPIO_CFG(PYRAMID_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
 	GPIO_CFG(PYRAMID_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
@@ -991,7 +990,7 @@ static uint32_t gsbi4_gpio_table_gpio[] = {
 };
 
 static uint32_t gsbi5_gpio_table[] = {
-	GPIO_CFG(PYRAMID_TP_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_TP_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
 	GPIO_CFG(PYRAMID_TP_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
@@ -1001,7 +1000,7 @@ static uint32_t gsbi5_gpio_table_gpio[] = {
 };
 
 static uint32_t gsbi7_gpio_table[] = {
-	GPIO_CFG(PYRAMID_GENERAL_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_GENERAL_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
 	GPIO_CFG(PYRAMID_GENERAL_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
@@ -1011,14 +1010,15 @@ static uint32_t gsbi7_gpio_table_gpio[] = {
 };
 
 static uint32_t gsbi10_gpio_table[] = {
-	GPIO_CFG(PYRAMID_SENSOR_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIOMUX_DRV_8MA),
-	GPIO_CFG(PYRAMID_SENSOR_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIOMUX_DRV_8MA),
+	GPIO_CFG(PYRAMID_SENSOR_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
+	GPIO_CFG(PYRAMID_SENSOR_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
 static uint32_t gsbi10_gpio_table_gpio[] = {
 	GPIO_CFG(PYRAMID_SENSOR_I2C_SDA, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 	GPIO_CFG(PYRAMID_SENSOR_I2C_SCL, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
+
 
 static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 {
@@ -1063,6 +1063,7 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 		gpio_tlmm_config(gsbi10_gpio_table_gpio[0], GPIO_CFG_ENABLE);
 		gpio_tlmm_config(gsbi10_gpio_table_gpio[1], GPIO_CFG_ENABLE);
 	}
+
 }
 
 static struct msm_i2c_platform_data msm_gsbi3_qup_i2c_pdata = {
@@ -1072,19 +1073,19 @@ static struct msm_i2c_platform_data msm_gsbi3_qup_i2c_pdata = {
 };
 
 static struct msm_i2c_platform_data msm_gsbi4_qup_i2c_pdata = {
-	.clk_freq = 384000,
+	.clk_freq = 100000,
 	.src_clk_rate = 24000000,
 	.msm_i2c_config_gpio = gsbi_qup_i2c_gpio_config,
 };
 
 static struct msm_i2c_platform_data msm_gsbi5_qup_i2c_pdata = {
-	.clk_freq = 100000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 	.msm_i2c_config_gpio = gsbi_qup_i2c_gpio_config,
 };
 
 static struct msm_i2c_platform_data msm_gsbi7_qup_i2c_pdata = {
-	.clk_freq = 100000,
+	.clk_freq = 384000,
 	.src_clk_rate = 24000000,
 	.msm_i2c_config_gpio = gsbi_qup_i2c_gpio_config,
 };
@@ -1104,8 +1105,6 @@ static struct msm_i2c_platform_data msm_gsbi10_qup_i2c_pdata = {
 static struct msm_i2c_platform_data msm_gsbi12_qup_i2c_pdata = {
 	.clk_freq = 100000,
 	.src_clk_rate = 24000000,
-        //	.use_gsbi_shared_mode = 1,
-        //	.share_uart_flag = 1,   
 	.msm_i2c_config_gpio = gsbi_qup_i2c_gpio_config,
 };
 
@@ -1127,17 +1126,6 @@ static struct msm_i2c_ssbi_platform_data msm_ssbi3_pdata = {
 	.controller_type = MSM_SBI_CTRL_SSBI,
 };
 #endif
-
-#ifdef CONFIG_MSM_DSPS
-static void __init msm8x60_init_dsps(void)
-{
-	struct msm_dsps_platform_data *pdata =
-		msm_dsps_device.dev.platform_data;
-
-	pdata->pil_name = DSPS_PIL_GENERIC_NAME;
-        platform_device_register(&msm_dsps_device);
-}
-#endif 
 
 #define MSM_PMEM_SF_SIZE 0x4000000 /* 64 Mbytes */
 #define MSM_HDMI_PRIM_PMEM_SF_SIZE 0x4000000 /* 64 Mbytes */
@@ -2077,7 +2065,6 @@ static struct platform_device *pyramid_devices[] __initdata = {
 	&msm_pil_q6v3,
 	&msm_pil_modem,
 	&msm_pil_tzapps,
-	&msm_pil_dsps,
 	&msm_pil_vidc,
 #ifdef CONFIG_QSEECOM
 	&qseecom_device,
@@ -3048,10 +3035,6 @@ static void __init pyramid_init(void)
 	platform_device_register(&msm8x60_8901_mpp_vreg);
 
         pyramid_init_fb();
-
-#ifdef CONFIG_MSM_DSPS
-		msm8x60_init_dsps();
-#endif
 
 #ifdef CONFIG_USB_EHCI_MSM_72K
 	msm_add_host(0, &msm_usb_host_pdata);
