@@ -2740,14 +2740,6 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 	},
 #endif
 #endif /*CONFIG_MSM_SSBI */
-#ifdef CONFIG_MSM_CAMERA
-    {
-		I2C_SURF | I2C_FFA,
-		MSM_GSBI4_QUP_I2C_BUS_ID,
-		msm_camera_boardinfo,
-		ARRAY_SIZE(msm_camera_boardinfo),
-	},
-#endif
 #if HASTIMPANI
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID,
@@ -3004,7 +2996,7 @@ static void __init pyramid_init(void)
 	pyramid_init_mmc();
 
 #ifdef CONFIG_MSM_CAMERA
-        msm8x60_init_cam();
+        pyramid_init_cam();
 #endif
 
 	/* Accessory */
