@@ -3693,6 +3693,10 @@ static struct clk_lookup msm_clocks_8x60[] = {
 	CLK_LOOKUP("core_clk",		hdmi_app_clk.c,	"hdmi_msm.1"),
 	CLK_LOOKUP("vpe_clk",		vpe_clk.c,		NULL),
 	CLK_LOOKUP("core_clk",		vpe_clk.c,	"footswitch-8x60.9"),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("csi0_vfe_clk",	csi0_vfe_clk.c,		"msm_vfe.0"),
+	CLK_LOOKUP("csi1_vfe_clk",	csi1_vfe_clk.c,		"msm_vfe.0"),
+#endif
 	CLK_LOOKUP("csi_vfe_clk",	csi0_vfe_clk.c,		NULL),
 	CLK_LOOKUP("csi_vfe_clk",	csi1_vfe_clk.c, "msm_camera_ov7692.0"),
 	CLK_LOOKUP("csi_vfe_clk",	csi1_vfe_clk.c, "msm_camera_ov9726.0"),

@@ -1446,6 +1446,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			s_ctrl->prev_dig_gain= cdata.cfg.exp_gain.dig_gain;
 			break;
 
+#ifndef CONFIG_ARCH_MSM8X60
 #ifndef CONFIG_MSM8960_ONLY
 		case CFG_SET_HDR_EXP_GAIN:
 			if (s_ctrl->func_tbl->
@@ -1476,6 +1477,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 					s_ctrl,
 					cdata.cfg.exp_gain.is_outdoor);
 			break;
+#endif
 #endif
 		case CFG_SET_PICT_EXP_GAIN:
 			if (s_ctrl->func_tbl->
