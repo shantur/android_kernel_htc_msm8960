@@ -2449,6 +2449,7 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 	},
 #endif
 #endif /*CONFIG_MSM_SSBI */
+#if 0
 #ifdef CONFIG_MSM_CAMERA
     {
 		I2C_SURF | I2C_FFA,
@@ -2456,6 +2457,7 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 		msm_camera_boardinfo,
 		ARRAY_SIZE(msm_camera_boardinfo),
 	},
+#endif
 #endif
 #ifdef CONFIG_TPS65200
 	{

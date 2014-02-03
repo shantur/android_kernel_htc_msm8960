@@ -105,13 +105,7 @@ typedef struct {
 	uint8_t reg_a6;
 } mhl_driving_params;
 #endif
-
-enum msm_camera_csi_data_format {
-	CSI_8BIT,
-	CSI_10BIT,
-	CSI_12BIT,
-};
-
+#if 0
 struct msm_camera_csi_params {
 	enum msm_camera_csi_data_format data_format;
 	uint8_t lane_cnt;
@@ -169,12 +163,6 @@ enum rawchip_enable_type {
 	RAWCHIP_MIPI_BYPASS,
 };
 
-enum camera_vreg_type {
-	REG_LDO,
-	REG_VS,
-	REG_GPIO,
-};
-
 enum sensor_flip_mirror_info {
 	CAMERA_SENSOR_NONE,
 	CAMERA_SENSOR_MIRROR,
@@ -218,5 +206,6 @@ enum hdr_mode_type {
 	NON_HDR_MODE,
 	HDR_MODE,
 };
+#endif
 
 #endif /* __ASM_ARCH_MSM_BOARD_EXT_HTC_H */

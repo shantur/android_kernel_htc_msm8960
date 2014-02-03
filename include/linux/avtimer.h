@@ -15,7 +15,19 @@ struct dev_avtimer_data {
 	uint32_t avtimer_msw_phy_addr;
 	uint32_t avtimer_lsw_phy_addr;
 };
+#ifdef CONFIG_MSM_AVTIMER
 int avcs_core_open(void);
 int avcs_core_disable_power_collapse(int disable);/* true or false */
+#else
+static inline int avcs_core_open(void)
+{
+  return -ENODEV;
+}
+
+static inline int avcs_core_disable_power_collapse(int disable)
+{
+  return -ENODEV;
+}
+#endif
 
 #endif
