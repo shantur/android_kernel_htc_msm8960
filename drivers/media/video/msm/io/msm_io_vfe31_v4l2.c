@@ -34,12 +34,15 @@
 
 #define BUFF_SIZE_128 128
 
+static struct clk *camio_cam_clk;
 static struct clk *camio_vfe_clk;
 static struct clk *camio_vpe_clk;
 static struct clk *camio_vpe_pclk;
 static struct regulator *fs_vpe;
+static int camio_cam_open_cnt = 0;
 
 static int vpe_clk_rate;
+static int mclk_clk_rate;
 
 int msm_camio_clk_enable(enum msm_camio_clk_type clktype)
 {
@@ -47,6 +50,16 @@ int msm_camio_clk_enable(enum msm_camio_clk_type clktype)
 	struct clk *clk = NULL;
 
 	switch (clktype) {
+	case CAMIO_CAM_MCLK_CLK:
+		camio_cam_open_cnt++;
+		if (camio_cam_open_cnt > 1)
+			return 0;
+		camio_cam_clk =
+		clk = clk_get(NULL, "cam_clk");
+		mclk_clk_rate = clk_round_rate(camio_cam_clk, mclk_clk_rate);
+		msm_camio_clk_rate_set_2(clk, mclk_clk_rate);
+		break;
+
 	case CAMIO_VPE_CLK:
 		camio_vpe_clk =
 		clk = clk_get(NULL, "vpe_clk");
@@ -78,6 +91,17 @@ int msm_camio_clk_disable(enum msm_camio_clk_type clktype)
 	struct clk *clk = NULL;
 
 	switch (clktype) {
+	case CAMIO_CAM_MCLK_CLK:
+		camio_cam_open_cnt--;
+		if (camio_cam_open_cnt > 0)
+			return 0;
+		if (camio_cam_open_cnt < 0){
+			camio_cam_open_cnt = 0;
+			return 0;
+		}
+		clk = camio_cam_clk;
+		break;
+
 	case CAMIO_VPE_CLK:
 		clk = camio_vpe_clk;
 		break;
@@ -108,6 +132,13 @@ int msm_camio_vfe_clk_rate_set(int rate)
 	if (rate > clk_get_rate(clk))
 		rc = clk_set_rate(clk, rate);
 	return rc;
+}
+
+void msm_camio_clk_rate_set(int rate)
+{
+	struct clk *clk = camio_cam_clk;
+        mclk_clk_rate = rate;
+	clk_set_rate(clk, rate);
 }
 
 void msm_camio_clk_rate_set_2(struct clk *clk, int rate)
