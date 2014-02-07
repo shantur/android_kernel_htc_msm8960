@@ -2655,11 +2655,7 @@ static int __mt9v113_probe(struct platform_device *pdev)
 static struct platform_driver msm_camera_driver = {
 	.probe = __mt9v113_probe,
 	.driver = {
-#ifdef CONFIG_MSM_CAMERA_8X60
-		   .name = "msm_camera_webcam",
-#else
 		   .name = "msm_camera_mt9v113",
-#endif
 		   .owner = THIS_MODULE,
 		   },
 };
