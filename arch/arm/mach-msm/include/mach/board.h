@@ -131,6 +131,7 @@ struct msm_camera_sensor_flash_led {
 
 struct msm_camera_sensor_flash_src {
 	int flash_sr_type;
+	int (*camera_flash)(int level);
 
 	union {
 		struct msm_camera_sensor_flash_pmic pmic_src;
@@ -139,7 +140,6 @@ struct msm_camera_sensor_flash_src {
 			current_driver_src;
 		struct msm_camera_sensor_flash_external
 			ext_driver_src;
-		struct msm_camera_sensor_flash_led led_src;
 	} _fsrc;
 };
 
@@ -147,6 +147,38 @@ struct msm_camera_sensor_flash_data {
 	int flash_type;
 	struct msm_camera_sensor_flash_src *flash_src;
 };
+
+/* HTC_START linear led 20111011 */
+struct camera_led_info {
+	uint16_t enable;
+	uint16_t low_limit_led_state;
+	uint16_t max_led_current_ma;
+	uint16_t num_led_est_table;
+};
+
+struct camera_led_est {
+	uint16_t enable;
+	uint16_t led_state;
+	uint16_t current_ma;
+	uint16_t lumen_value;
+	uint16_t min_step;
+	uint16_t max_step;
+};
+
+struct camera_flash_info {
+	struct camera_led_info *led_info;
+	struct camera_led_est *led_est_table;
+};
+
+struct camera_flash_cfg {
+	int num_flash_levels;
+	int (*camera_flash)(int level);
+	uint16_t low_temp_limit;
+	uint16_t low_cap_limit;
+	uint8_t postpone_led_mode;
+	struct camera_flash_info *flash_info;	/* HTC linear led 20111011 */
+};
+/* HTC_END */
 
 struct msm_camera_sensor_strobe_flash_data {
 	uint8_t flash_trigger;
@@ -218,15 +250,23 @@ enum msm_camera_vreg_name_t {
 	CAM_VAF,
 };
 
+enum sensor_flip_mirror_info {
+	CAMERA_SENSOR_NONE,
+	CAMERA_SENSOR_MIRROR,
+	CAMERA_SENSOR_FLIP,
+	CAMERA_SENSOR_MIRROR_FLIP,
+};
+
 struct msm_camera_sensor_platform_info {
 	int mount_angle;
+	int sensor_reset_enable;
 	int sensor_reset;
-	struct camera_vreg_t *cam_vreg;
-	int num_vreg;
-	int32_t (*ext_power_ctrl) (int enable);
-	struct msm_camera_gpio_conf *gpio_conf;
-	struct msm_camera_i2c_conf *i2c_conf;
-	struct msm_camera_csi_lane_params *csi_lane_params;
+	int sensor_pwd;
+	int vcm_pwd;
+	int vcm_enable;
+	int privacy_light;
+	enum sensor_flip_mirror_info mirror_flip;
+	void *privacy_light_info;
 };
 
 enum msm_camera_actuator_name {
@@ -257,6 +297,22 @@ struct msm_eeprom_info {
 	int eeprom_i2c_slave_addr;
 };
 
+enum msm_camera_csi_data_format {
+	CSI_8BIT,
+	CSI_10BIT,
+	CSI_12BIT,
+};
+
+struct msm_camera_csi_params {
+	enum msm_camera_csi_data_format data_format;
+	uint8_t lane_cnt;
+	uint8_t lane_assign;
+	uint8_t settle_cnt;
+	uint8_t dpcm_scheme;
+	uint8_t mipi_driving_strength;/*from 0-3*/
+	uint8_t hs_impedence;
+};
+
 struct msm_camera_sensor_info {
 	const char *sensor_name;
 	int sensor_reset_enable;
@@ -272,6 +328,7 @@ struct msm_camera_sensor_info {
 	uint8_t num_resources;
 	struct msm_camera_sensor_flash_data *flash_data;
 	int csi_if;
+	struct msm_camera_csi_params csi_params;
 	struct msm_camera_sensor_strobe_flash_data *strobe_flash_data;
 	char *eeprom_data;
 	enum msm_camera_type camera_type;
@@ -280,7 +337,26 @@ struct msm_camera_sensor_info {
 	struct msm_actuator_info **actuator_info_table;
 	struct msm_actuator_info *actuator_info;
 	int pmic_gpio_enable;
+	struct msm_camera_gpio_conf *gpio_conf;
 	struct msm_eeprom_info *eeprom_info;
+	void(*camera_clk_switch)(void);
+	int (*camera_power_on)(void);
+	int (*camera_power_off)(void);
+	int use_rawchip;
+	int (*sensor_version)(void);
+	int power_down_disable; /* if close power */
+	int full_size_preview; /* if use full-size preview */
+	int cam_select_pin; /* for two sensors */
+	int mirror_mode; /* for sensor upside down */
+	int(*camera_pm8058_power)(int); /* for express */
+	struct camera_flash_cfg* flash_cfg;
+	int gpio_set_value_force; /*true: force to set gpio  */
+	int dev_node;
+	int camera_platform;
+	uint8_t led_high_enabled;
+	uint32_t kpi_sensor_start;
+	uint32_t kpi_sensor_end;
+	uint8_t (*preview_skip_frame)(void);
 };
 
 struct msm_camera_board_info {
