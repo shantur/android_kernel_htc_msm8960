@@ -16,6 +16,25 @@ config  MSM_CAMERA_HTC_HAL_VERSION
 	default 2 if ARCH_APQ8064 && MACH_MONARUDO
 	default 1
 
+config MSM_CAMERA_8X60
+       depends on MSM_CAMERA && ARCH_MSM8X60
+       bool
+       default y
+
+config CAMERA_ZSL
+       bool "Qualcomm MSM ZSL support"
+       depends on MSM_CAMERA && ARCH_MSM8X60
+       default n
+       ---help---
+         Enable support for ZSL
+
+config CAMERA_3D
+       bool "Qualcomm MSM 3D support"
+       depends on MSM_CAMERA && ARCH_MSM8X60
+       default n
+       ---help---
+         Enable support for 3D
+
 comment "Camera Sensor Selection"
 config MT9T013
 	bool "Sensor mt9t013 (BAYER 3M)"
@@ -60,6 +79,13 @@ config S5K6A1GX
 	---help---
 	  Support for S5K6A1GX samsung sensor driver.
 	  It is a Bayer 1.3MP sensor it supports one mipi lanes.
+
+config S5K3H1GX
+	bool "Sensor s5k3h1gx"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	   Samsung 8M 3H1 MIPI AF Sensor
 
 config AR0260
 	bool "Sensor ar0260"

@@ -1548,7 +1548,7 @@ int __init msm_add_sdcc(unsigned int controller, struct mmc_platform_data *plat)
 	return platform_device_register(pdev);
 }
 
-#ifdef CONFIG_MSM_CAMERA_V4L2
+#ifdef CONFIG_MSM_CAMERA
 static struct resource msm_csic0_resources[] = {
 	{
 		.name   = "csic",
