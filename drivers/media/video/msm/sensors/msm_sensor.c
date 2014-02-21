@@ -571,12 +571,16 @@ int32_t msm_sensor_power_up(const struct msm_camera_sensor_info *data)
 	pr_info("%s: %d\n", __func__, __LINE__);
 //	msm_camio_clk_rate_set(MSM_SENSOR_MCLK_24HZ);
 
-	if (data->sensor_platform_info->sensor_reset_enable)
+	if (data->sensor_platform_info->sensor_reset_enable) {
 		gpio = data->sensor_platform_info->sensor_reset;
-	else
+		pr_info("Sensor 1 %s: %d\n", __func__, __LINE__);
+	}
+	else {
 		gpio = data->sensor_platform_info->sensor_pwd;
-
+		pr_info("Sensor 2 %s: %d\n", __func__, __LINE__);
+	}
 	rc = gpio_request(gpio, "SENSOR_NAME");
+	pr_info("Sensor 3 %s: %d\n", __func__, __LINE__);
 	if (!rc) {
 		CDBG("%s: reset sensor\n", __func__);
 		gpio_direction_output(gpio, 0);

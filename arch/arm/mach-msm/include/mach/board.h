@@ -216,18 +216,6 @@ struct msm_camera_gpio_conf {
 #endif
 };
 
-enum msm_camera_i2c_mux_mode {
-	MODE_R,
-	MODE_L,
-	MODE_DUAL
-};
-
-struct msm_camera_i2c_conf {
-	uint8_t use_i2c_mux;
-	struct platform_device *mux_dev;
-	enum msm_camera_i2c_mux_mode i2c_mux_mode;
-};
-
 enum msm_camera_vreg_name_t {
 	CAM_VDIG,
 	CAM_VIO,
@@ -250,13 +238,26 @@ struct msm_camera_sensor_platform_info {
 	int vcm_pwd;
 	int vcm_enable;
 	int privacy_light;
-	enum msm_camera_pixel_order_default pixel_order_default;
 	enum sensor_flip_mirror_info mirror_flip;
 	void *privacy_light_info;
-	enum sensor_mount_angle sensor_mount_angle;
-	bool ews_enable;
 #endif
 };
+
+#ifdef CONFIG_MSM_CAMERA_V4L2
+struct msm_camera_platform_info {
+	 struct msm_cam_clk_info *clk_info;
+	 int num_clks;
+};
+#endif
+
+struct msm_actuator_info {
+	struct i2c_board_info const *board_info;
+	int bus_id;
+	int vcm_pwd;
+	int vcm_enable;
+	int use_rawchip_af;
+};
+
 
 enum msm_camera_actuator_name {
 	MSM_ACTUATOR_MAIN_CAM_0,
@@ -268,25 +269,6 @@ enum msm_camera_actuator_name {
 	MSM_ACTUATOR_WEB_CAM_0,
 	MSM_ACTUATOR_WEB_CAM_1,
 	MSM_ACTUATOR_WEB_CAM_2,
-};
-
-struct msm_actuator_info {
-	struct i2c_board_info const *board_info;
-	enum msm_camera_actuator_name cam_name;
-	int bus_id;
-	int vcm_pwd;
-	int vcm_enable;
-#ifdef CONFIG_MACH_HTC
-	int use_rawchip_af;
-	int otp_diviation;
-	void (*vcm_wa_vreg_on) (void);
-	void (*vcm_wa_vreg_off) (void);
-	void (*oisbinder_i2c_add_driver) (void* i2c_client);
-	void (*oisbinder_open_init) (void);
-	void (*oisbinder_power_down) (void);
-	int32_t (*oisbinder_act_set_ois_mode) (int ois_mode);
-	int32_t (*oisbinder_mappingTbl_i2c_write) (int startup_mode, void * sensor_actuator_info);
-#endif
 };
 
 struct msm_eeprom_info {
@@ -327,11 +309,7 @@ struct msm_camera_sensor_info {
 	struct msm_camera_gpio_conf *gpio_conf;
 	int (*camera_power_on)(void);
 	int (*camera_power_off)(void);
-	void (*camera_yushanii_probed)(enum htc_camera_image_type_board);
-	enum htc_camera_image_type_board htc_image;
 	int use_rawchip;
-	int hdr_mode;
-	int video_hdr_capability;
 	void(*camera_clk_switch)(void);
 	int power_down_disable;
 	int full_size_preview;

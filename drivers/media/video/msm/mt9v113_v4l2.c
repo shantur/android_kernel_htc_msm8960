@@ -1042,8 +1042,6 @@ static int mt9v113_set_sensor_mode(int mode)
 		mt9v113_csi_params.lane_assign = 0xe4;
 		mt9v113_csi_params.dpcm_scheme = 0;
 		mt9v113_csi_params.settle_cnt = 0x0d;
-		mt9v113_csi_params.mipi_driving_strength = 0;
-		mt9v113_csi_params.hs_impedence = 0x0F;
 
 		v4l2_subdev_notify(mt9v113_ctrl->sensor_dev,
 			NOTIFY_CSIC_CFG,

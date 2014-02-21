@@ -23,6 +23,7 @@
 #ifndef MT9V113_H
 #define MT9V113_H
 
+#include <linux/module.h>
 #include <linux/types.h>
 #include <mach/camera.h>
 
