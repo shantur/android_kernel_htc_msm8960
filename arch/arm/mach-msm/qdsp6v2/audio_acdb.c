@@ -18,7 +18,7 @@
 #include <linux/msm_ion.h>
 #include <linux/mm.h>
 #include <mach/qdsp6v2/audio_acdb.h>
-#include <linux/android_pmem.h>
+
 
 #define MAX_NETWORKS		15
 
@@ -27,9 +27,6 @@ struct sidetone_atomic_cal {
 	atomic_t	gain;
 };
 
-#ifdef CONFIG_MACH_PYRAMID
-#define ACDB_USE_PMEM
-#endif
 
 struct acdb_data {
 	struct mutex		acdb_mutex;
@@ -66,12 +63,8 @@ struct acdb_data {
 	struct sidetone_atomic_cal	sidetone_cal;
 
 	/* Allocation information */
-#ifdef ACDB_USE_PMEM
-        struct file                     *file;
-#else
 	struct ion_client		*ion_client;
 	struct ion_handle		*ion_handle;
-#endif
 	atomic_t			map_handle;
 	atomic64_t			paddr;
 	atomic64_t			kvaddr;
@@ -620,58 +613,6 @@ static int acdb_open(struct inode *inode, struct file *f)
 	return result;
 }
 
-#ifdef ACDB_USE_PMEM
-static int deregister_memory(void)
-{
-	if (atomic64_read(&acdb_data.mem_len)) {
-		mutex_lock(&acdb_data.acdb_mutex);
-		atomic_set(&acdb_data.vocstrm_total_cal_size, 0);
-		atomic_set(&acdb_data.vocproc_total_cal_size, 0);
-		atomic_set(&acdb_data.vocvol_total_cal_size, 0);
-		atomic64_set(&acdb_data.mem_len, 0);
-		put_pmem_file(acdb_data.file);
-		atomic_set(&acdb_data.map_handle, 0);
-		mutex_unlock(&acdb_data.acdb_mutex);
-	}
-	return 0;
-}
-
-static int register_memory(void)
-{
-	int			result;
-	unsigned long		paddr;
-	unsigned long		kvaddr;
-	unsigned long		mem_len;
-
-	mutex_lock(&acdb_data.acdb_mutex);
-
-	result = get_pmem_file(atomic_read(&acdb_data.map_handle), &paddr,
-				&kvaddr, &mem_len,
-				&acdb_data.file);
-	if (result != 0) {
-		pr_err("%s: Could not get phys addr!!!\n", __func__);
-		goto err;
-	}
-
-	atomic64_set(&acdb_data.paddr, paddr);
-	atomic64_set(&acdb_data.kvaddr, kvaddr);
-	atomic64_set(&acdb_data.mem_len, mem_len);
-	mutex_unlock(&acdb_data.acdb_mutex);
-
-	pr_debug("%s done! paddr = 0x%lx, "
-		"kvaddr = 0x%lx, len = x%lx\n",
-		 __func__,
-		(long)atomic64_read(&acdb_data.paddr),
-		(long)atomic64_read(&acdb_data.kvaddr),
-		(long)atomic64_read(&acdb_data.mem_len));
-
-	return result;
-err:
-	atomic64_set(&acdb_data.mem_len, 0);
-	mutex_unlock(&acdb_data.acdb_mutex);
-	return result;
-}
-#else
 static int deregister_memory(void)
 {
 	if (atomic64_read(&acdb_data.mem_len)) {
@@ -750,7 +691,6 @@ err:
 	mutex_unlock(&acdb_data.acdb_mutex);
 	return result;
 }
-#endif
 static long acdb_ioctl(struct file *f,
 		unsigned int cmd, unsigned long arg)
 {
