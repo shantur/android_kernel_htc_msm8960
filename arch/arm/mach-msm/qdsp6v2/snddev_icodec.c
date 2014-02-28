@@ -34,6 +34,7 @@
 #include <sound/q6afe.h>
 #include <sound/apr_audio.h>
 #include "snddev_icodec.h"
+#include <linux/spi_aic3254.h>
 
 #define SNDDEV_ICODEC_PCM_SZ 32 /* 16 bit / sample stereo mode */
 #define SNDDEV_ICODEC_MUL_FACTOR 3 /* Multi by 8 Shift by 3  */
@@ -48,15 +49,22 @@
 #define SNDDEV_VREG_LOW_POWER_LOAD (36000)
 #define SNDDEV_VREG_HIGH_POWER_LOAD (56000)
 
-bool msm_codec_i2s_slave_mode;
+static bool msm_codec_i2s_slave_mode = true;
 
-/* Context for each internal codec sound device */
-struct snddev_icodec_state {
-	struct snddev_icodec_data *data;
-	struct adie_codec_path *adie_path;
-	u32 sample_rate;
-	u32 enabled;
-};
+static struct q6v2audio_icodec_ops default_audio_ops;
+static struct q6v2audio_icodec_ops *audio_ops = &default_audio_ops;
+static struct q6v2audio_aic3254_ops default_aic3254_ops;
+static struct q6v2audio_aic3254_ops *aic3254_ops = &default_aic3254_ops;
+
+void htc_8x60_register_icodec_ops(struct q6v2audio_icodec_ops *ops)
+{
+	audio_ops = ops;
+}
+
+void htc_8x60_register_aic3254_ops(struct q6v2audio_aic3254_ops *ops)
+{
+	aic3254_ops = ops;
+}
 
 /* Global state for the driver */
 struct snddev_icodec_drv_state {
@@ -138,6 +146,7 @@ static int msm_snddev_rx_mclk_request(void)
 {
 	int rc = 0;
 
+#if !defined(CONFIG_MSM8X60_AUDIO) || !defined(CONFIG_MACH_HTC)
 	rc = gpio_request(the_msm_cdcclk_ctl_state.rx_mclk,
 		"MSM_SNDDEV_RX_MCLK");
 	if (rc < 0) {
@@ -145,12 +154,14 @@ static int msm_snddev_rx_mclk_request(void)
 		return rc;
 	}
 	the_msm_cdcclk_ctl_state.rx_mclk_requested = 1;
+#endif
 	return rc;
 }
 static int msm_snddev_tx_mclk_request(void)
 {
 	int rc = 0;
 
+#if !defined(CONFIG_MSM8X60_AUDIO) || !defined(CONFIG_MACH_HTC)
 	rc = gpio_request(the_msm_cdcclk_ctl_state.tx_mclk,
 		"MSM_SNDDEV_TX_MCLK");
 	if (rc < 0) {
@@ -158,21 +169,26 @@ static int msm_snddev_tx_mclk_request(void)
 		return rc;
 	}
 	the_msm_cdcclk_ctl_state.tx_mclk_requested = 1;
+#endif
 	return rc;
 }
 static void msm_snddev_rx_mclk_free(void)
 {
+#if !defined(CONFIG_MSM8X60_AUDIO) || !defined(CONFIG_MACH_HTC)
 	if (the_msm_cdcclk_ctl_state.rx_mclk_requested) {
 		gpio_free(the_msm_cdcclk_ctl_state.rx_mclk);
 		the_msm_cdcclk_ctl_state.rx_mclk_requested = 0;
 	}
+#endif
 }
 static void msm_snddev_tx_mclk_free(void)
 {
+#if !defined(CONFIG_MSM8X60_AUDIO) || !defined(CONFIG_MACH_HTC)
 	if (the_msm_cdcclk_ctl_state.tx_mclk_requested) {
 		gpio_free(the_msm_cdcclk_ctl_state.tx_mclk);
 		the_msm_cdcclk_ctl_state.tx_mclk_requested = 0;
 	}
+#endif
 }
 static int get_msm_cdcclk_ctl_gpios(struct platform_device *pdev)
 {
@@ -218,7 +234,9 @@ static struct platform_driver msm_cdcclk_ctl_driver = {
 
 static int snddev_icodec_open_lb(struct snddev_icodec_state *icodec)
 {
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	int trc;
+#endif
 	struct snddev_icodec_drv_state *drv = &snddev_icodec_drv;
 
 	/* Voting for low power is ok here as all use cases are
@@ -231,6 +249,7 @@ static int snddev_icodec_open_lb(struct snddev_icodec_state *icodec)
 	if (icodec->data->voltage_on)
 		icodec->data->voltage_on();
 
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	trc = adie_codec_open(icodec->data->profile, &icodec->adie_path);
 	if (IS_ERR_VALUE(trc))
 		pr_err("%s: adie codec open failed\n", __func__);
@@ -241,6 +260,7 @@ static int snddev_icodec_open_lb(struct snddev_icodec_state *icodec)
 	if (icodec->adie_path)
 		adie_codec_proceed_stage(icodec->adie_path,
 					ADIE_CODEC_DIGITAL_ANALOG_READY);
+#endif
 
 	if (icodec->data->pamp_on)
 		icodec->data->pamp_on();
@@ -312,20 +332,21 @@ static int snddev_icodec_open_rx(struct snddev_icodec_state *icodec)
 			vreg_mode_vote(drv->snddev_vreg, 1,
 					SNDDEV_HIGH_POWER_MODE);
 	}
-	msm_snddev_rx_mclk_request();
 
-	drv->rx_osrclk = clk_get_sys(NULL, "i2s_spkr_osr_clk");
-	if (IS_ERR(drv->rx_osrclk))
-		pr_err("%s master clock Error\n", __func__);
+        msm_snddev_rx_mclk_request();
 
-	trc =  clk_set_rate(drv->rx_osrclk,
-			SNDDEV_ICODEC_CLK_RATE(icodec->sample_rate));
-	if (IS_ERR_VALUE(trc)) {
-		pr_err("ERROR setting m clock1\n");
-		goto error_invalid_freq;
-	}
+        drv->rx_osrclk = clk_get_sys(NULL, "i2s_spkr_osr_clk");
+        if (IS_ERR(drv->rx_osrclk))
+          pr_err("%s master clock Error\n", __func__);
 
-	clk_prepare_enable(drv->rx_osrclk);
+        trc =  clk_set_rate(drv->rx_osrclk,
+                            SNDDEV_ICODEC_CLK_RATE(icodec->sample_rate));
+        if (IS_ERR_VALUE(trc)) {
+          pr_err("ERROR setting m clock1\n");
+          goto error_invalid_freq;
+        }
+
+        clk_prepare_enable(drv->rx_osrclk);
 	drv->rx_bitclk = clk_get_sys(NULL, "i2s_spkr_bit_clk");
 	if (IS_ERR(drv->rx_bitclk))
 		pr_err("%s clock Error\n", __func__);
@@ -343,23 +364,34 @@ static int snddev_icodec_open_rx(struct snddev_icodec_state *icodec)
 
 	if (IS_ERR_VALUE(trc)) {
 		pr_err("ERROR setting m clock1\n");
-		goto error_adie;
+		goto error_pamp;
 	}
 	clk_prepare_enable(drv->rx_bitclk);
 
 	if (icodec->data->voltage_on)
 		icodec->data->voltage_on();
 
-	/* Configure ADIE */
-	trc = adie_codec_open(icodec->data->profile, &icodec->adie_path);
-	if (IS_ERR_VALUE(trc))
-		pr_err("%s: adie codec open failed\n", __func__);
-	else
-		adie_codec_setpath(icodec->adie_path,
-					icodec->sample_rate, 256);
-	/* OSR default to 256, can be changed for power optimization
-	 * If OSR is to be changed, need clock API for setting the divider
-	 */
+        if (aic3254_ops->aic3254_set_mode) {
+          if (msm_get_call_state() == 1)
+            aic3254_ops->aic3254_set_mode(AIC3254_CONFIG_RX,
+                                          icodec->data->aic3254_voc_id);
+          else
+            aic3254_ops->aic3254_set_mode(AIC3254_CONFIG_RX,
+                                          icodec->data->aic3254_id);
+        }
+
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
+        /* Configure ADIE */
+        trc = adie_codec_open(icodec->data->profile, &icodec->adie_path);
+        if (IS_ERR_VALUE(trc))
+          pr_err("%s: adie codec open failed\n", __func__);
+        else
+          adie_codec_setpath(icodec->adie_path,
+                             icodec->sample_rate, 256);
+        /* OSR default to 256, can be changed for power optimization
+         * If OSR is to be changed, need clock API for setting the divider
+         */
+#endif
 
 	switch (icodec->data->channel_mode) {
 	case 2:
@@ -384,19 +416,20 @@ static int snddev_icodec_open_rx(struct snddev_icodec_state *icodec)
 	if (trc < 0)
 		pr_err("%s: afe open failed, trc = %d\n", __func__, trc);
 
-	/* Enable ADIE */
-	if (icodec->adie_path) {
-		adie_codec_proceed_stage(icodec->adie_path,
-					ADIE_CODEC_DIGITAL_READY);
-		adie_codec_proceed_stage(icodec->adie_path,
-					ADIE_CODEC_DIGITAL_ANALOG_READY);
-	}
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
+        /* Enable ADIE */
+        if (icodec->adie_path) {
+          adie_codec_proceed_stage(icodec->adie_path,
+                                   ADIE_CODEC_DIGITAL_READY);
+          adie_codec_proceed_stage(icodec->adie_path,
+                                   ADIE_CODEC_DIGITAL_ANALOG_READY);
+        }
 
-	if (msm_codec_i2s_slave_mode)
-		adie_codec_set_master_mode(icodec->adie_path, 1);
-	else
-		adie_codec_set_master_mode(icodec->adie_path, 0);
-
+        if (msm_codec_i2s_slave_mode)
+          adie_codec_set_master_mode(icodec->adie_path, 1);
+        else
+          adie_codec_set_master_mode(icodec->adie_path, 0);
+#endif
 	/* Enable power amplifier */
 	if (icodec->data->pamp_on) {
 		if (icodec->data->pamp_on()) {
@@ -411,7 +444,6 @@ static int snddev_icodec_open_rx(struct snddev_icodec_state *icodec)
 	return 0;
 
 error_pamp:
-error_adie:
 	clk_disable_unprepare(drv->rx_osrclk);
 error_invalid_freq:
 
@@ -473,13 +505,24 @@ static int snddev_icodec_open_tx(struct snddev_icodec_state *icodec)
 
 	clk_prepare_enable(drv->tx_bitclk);
 
-	/* Enable ADIE */
-	trc = adie_codec_open(icodec->data->profile, &icodec->adie_path);
-	if (IS_ERR_VALUE(trc))
-		pr_err("%s: adie codec open failed\n", __func__);
-	else
-		adie_codec_setpath(icodec->adie_path,
-					icodec->sample_rate, 256);
+        if (aic3254_ops->aic3254_set_mode) {
+          if (msm_get_call_state() == 1)
+            aic3254_ops->aic3254_set_mode(AIC3254_CONFIG_TX,
+                                          icodec->data->aic3254_voc_id);
+          else
+            aic3254_ops->aic3254_set_mode(AIC3254_CONFIG_TX,
+                                          icodec->data->aic3254_id);
+        }
+
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
+        /* Enable ADIE */
+        trc = adie_codec_open(icodec->data->profile, &icodec->adie_path);
+        if (IS_ERR_VALUE(trc))
+          pr_err("%s: adie codec open failed\n", __func__);
+        else
+          adie_codec_setpath(icodec->adie_path,
+                             icodec->sample_rate, 256);
+#endif
 
 	switch (icodec->data->channel_mode) {
 	case 2:
@@ -501,18 +544,19 @@ static int snddev_icodec_open_tx(struct snddev_icodec_state *icodec)
 
 	trc = afe_open(icodec->data->copp_id, &afe_config, icodec->sample_rate);
 
-	if (icodec->adie_path) {
-		adie_codec_proceed_stage(icodec->adie_path,
-					ADIE_CODEC_DIGITAL_READY);
-		adie_codec_proceed_stage(icodec->adie_path,
-					ADIE_CODEC_DIGITAL_ANALOG_READY);
-	}
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
+        if (icodec->adie_path) {
+          adie_codec_proceed_stage(icodec->adie_path,
+                                   ADIE_CODEC_DIGITAL_READY);
+          adie_codec_proceed_stage(icodec->adie_path,
+                                   ADIE_CODEC_DIGITAL_ANALOG_READY);
+        }
 
-	if (msm_codec_i2s_slave_mode)
-		adie_codec_set_master_mode(icodec->adie_path, 1);
-	else
-		adie_codec_set_master_mode(icodec->adie_path, 0);
-
+        if (msm_codec_i2s_slave_mode)
+          adie_codec_set_master_mode(icodec->adie_path, 1);
+        else
+          adie_codec_set_master_mode(icodec->adie_path, 0);
+#endif
 	icodec->enabled = 1;
 
 	pm_qos_update_request(&drv->tx_pm_qos_req, PM_QOS_DEFAULT_VALUE);
@@ -540,12 +584,14 @@ static int snddev_icodec_close_lb(struct snddev_icodec_state *icodec)
 	if (drv->snddev_vreg)
 		vreg_mode_vote(drv->snddev_vreg, 0, SNDDEV_LOW_POWER_MODE);
 
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	if (icodec->adie_path) {
 		adie_codec_proceed_stage(icodec->adie_path,
 			ADIE_CODEC_DIGITAL_OFF);
 		adie_codec_close(icodec->adie_path);
 		icodec->adie_path = NULL;
 	}
+#endif
 
 	if (icodec->data->voltage_off)
 		icodec->data->voltage_off();
@@ -567,6 +613,7 @@ static int snddev_icodec_close_rx(struct snddev_icodec_state *icodec)
 	if (icodec->data->pamp_off)
 		icodec->data->pamp_off();
 
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	/* Disable ADIE */
 	if (icodec->adie_path) {
 		adie_codec_proceed_stage(icodec->adie_path,
@@ -574,6 +621,7 @@ static int snddev_icodec_close_rx(struct snddev_icodec_state *icodec)
 		adie_codec_close(icodec->adie_path);
 		icodec->adie_path = NULL;
 	}
+#endif
 
 	afe_close(icodec->data->copp_id);
 
@@ -601,6 +649,7 @@ static int snddev_icodec_close_tx(struct snddev_icodec_state *icodec)
 	if (drv->snddev_vreg)
 		vreg_mode_vote(drv->snddev_vreg, 0, SNDDEV_HIGH_POWER_MODE);
 
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	/* Disable ADIE */
 	if (icodec->adie_path) {
 		adie_codec_proceed_stage(icodec->adie_path,
@@ -608,6 +657,7 @@ static int snddev_icodec_close_tx(struct snddev_icodec_state *icodec)
 		adie_codec_close(icodec->adie_path);
 		icodec->adie_path = NULL;
 	}
+#endif
 
 	afe_close(icodec->data->copp_id);
 
@@ -629,9 +679,9 @@ static int snddev_icodec_close_tx(struct snddev_icodec_state *icodec)
 static int snddev_icodec_set_device_volume_impl(
 		struct msm_snddev_info *dev_info, u32 volume)
 {
-	struct snddev_icodec_state *icodec;
-
 	int rc = 0;
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
+	struct snddev_icodec_state *icodec;
 
 	icodec = dev_info->private_data;
 
@@ -659,6 +709,7 @@ static int snddev_icodec_set_device_volume_impl(
 		pr_err("%s: Invalid device volume control\n", __func__);
 		return -EPERM;
 	}
+#endif
 	return rc;
 }
 
@@ -820,12 +871,15 @@ static int snddev_icodec_set_freq(struct msm_snddev_info *dev_info, u32 rate)
 	}
 
 	icodec = dev_info->private_data;
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	if (adie_codec_freq_supported(icodec->data->profile, rate) != 0) {
 		pr_err("%s: adie_codec_freq_supported() failed\n", __func__);
 		rc = -EINVAL;
 		goto error;
-	} else {
-		if (snddev_icodec_check_freq(rate) != 0) {
+	} else
+#endif
+          {
+                if (snddev_icodec_check_freq(rate) != 0) {
 			pr_err("%s: check_freq failed\n", __func__);
 			rc = -EINVAL;
 			goto error;
@@ -850,6 +904,11 @@ static int snddev_icodec_enable_sidetone(struct msm_snddev_info *dev_info,
 	int rc = 0;
 	struct snddev_icodec_state *icodec;
 	struct snddev_icodec_drv_state *drv = &snddev_icodec_drv;
+
+#ifdef CONFIG_SPI_AIC3254
+	/*3254 sidetone will be binded with dsp image.*/
+        goto error;
+#endif
 
 	if (!dev_info) {
 		pr_err("invalid dev_info\n");
@@ -884,10 +943,15 @@ static int snddev_icodec_enable_anc(struct msm_snddev_info *dev_info,
 	u32 enable)
 {
 	int rc = 0;
+#if defined(CONFIG_TIMPANI_CODEC) || defined(CONFIG_MARIMBA_CODEC)
 	struct adie_codec_anc_data *reg_writes;
 	struct acdb_cal_block cal_block;
 	struct snddev_icodec_state *icodec;
 	struct snddev_icodec_drv_state *drv = &snddev_icodec_drv;
+
+#ifdef CONFIG_SPI_AIC3254
+        goto error;
+#endif
 
 	pr_info("%s: enable=%d\n", __func__, enable);
 
@@ -933,6 +997,7 @@ static int snddev_icodec_enable_anc(struct msm_snddev_info *dev_info,
 	}
 
 error:
+#endif
 	return rc;
 
 }
@@ -982,6 +1047,7 @@ static int snddev_icodec_probe(struct platform_device *pdev)
 	struct snddev_icodec_data *pdata;
 	struct msm_snddev_info *dev_info;
 	struct snddev_icodec_state *icodec;
+        static int first_time = 1;
 
 	if (!pdev || !pdev->dev.platform_data) {
 		printk(KERN_ALERT "Invalid caller\n");
@@ -1032,6 +1098,18 @@ static int snddev_icodec_probe(struct platform_device *pdev)
 	} else {
 		dev_info->dev_ops.enable_anc = NULL;
 	}
+
+	if (first_time) {
+		if (audio_ops->is_msm_i2s_slave)
+			msm_codec_i2s_slave_mode = audio_ops->is_msm_i2s_slave();
+		else
+			msm_codec_i2s_slave_mode = false;
+
+		pr_info("%s: msm_codec_i2s_slave_mode = %d\n",
+			__func__, msm_codec_i2s_slave_mode);
+
+		first_time = 0;
+        }
 error:
 	return rc;
 }
@@ -1046,6 +1124,28 @@ static struct platform_driver snddev_icodec_driver = {
   .remove = snddev_icodec_remove,
   .driver = { .name = "snddev_icodec" }
 };
+
+int update_aic3254_info(struct aic3254_info *info)
+{
+	struct msm_snddev_info *dev_info;
+	int rc = 0;
+
+	dev_info = audio_dev_ctrl_find_dev(info->dev_id);
+	if (IS_ERR(dev_info))
+		rc = -ENODEV;
+	else {
+		if ((dev_info->copp_id == PRIMARY_I2S_RX) ||
+			(dev_info->copp_id == PRIMARY_I2S_TX)) {
+			struct snddev_icodec_state *icodec;
+			icodec = dev_info->private_data;
+			icodec->data->aic3254_id = info->path_id;
+			pr_info("%s: update aic3254 id of device %s as %d\n",
+				__func__, dev_info->name, icodec->data->aic3254_id);
+		}
+	}
+
+	return rc;
+}
 
 module_param(msm_codec_i2s_slave_mode, bool, 0);
 MODULE_PARM_DESC(msm_codec_i2s_slave_mode, "Set MSM to I2S slave clock mode");
