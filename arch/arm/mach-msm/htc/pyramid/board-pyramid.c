@@ -980,8 +980,14 @@ static struct msm_i2c_platform_data msm_gsbi12_qup_i2c_pdata = {
 #endif
 
 #if defined(CONFIG_SPI_QUP) || defined(CONFIG_SPI_QUP_MODULE)
+static int spi_dma_config(void)
+{
+  return -ENOSYS;
+}
+
 static struct msm_spi_platform_data msm_gsbi1_qup_spi_pdata = {
 	.max_clock_speed = 24000000,
+        .dma_config = spi_dma_config,
 };
 #endif
 
