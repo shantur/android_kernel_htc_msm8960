@@ -82,6 +82,12 @@
 /*** END Memory map ***/
 
 /* GPIO definition */
+#define PYRAMID_GPIO_CAM_MCLK            (32)
+#define PYRAMID_GPIO_CAM_VCM_PD      (58)
+#define PYRAMID_GPIO_CAM1_RSTz       (137)
+#define PYRAMID_GPIO_CAM2_RSTz       (138)
+#define PYRAMID_GPIO_CAM2_PWDN       (140)
+#define PYRAMID_GPIO_MCLK_SWITCH     (141)
 
 /* Direct Keys */
 #define PYRAMID_GPIO_KEY_POWER          (125)
@@ -134,8 +140,10 @@
 
 /* Camera */
 #define PYRAMID_CAM_CAM1_ID           (10)
+#define PYRAMID_GPIO_CAM_MCLK     	(32)
 #define PYRAMID_CAM_I2C_SDA           (47)
 #define PYRAMID_CAM_I2C_SCL           (48)
+#define PYRAMID_GPIO_CAM2_RSTz       (138)
 
 /* General */
 #define PYRAMID_GENERAL_I2C_SDA		(59)
@@ -183,6 +191,7 @@ extern int pm8901_regulator_pdata_len;
 extern struct platform_device msm_adc_device;
 
 void __init pyramid_init_mmc(void);
+void __init pyramid_init_cam(void);
 int __init pyramid_init_wifi_mmc(void);
 void __init pyramid_audio_init(void);
 int __init pyramid_init_keypad(void);

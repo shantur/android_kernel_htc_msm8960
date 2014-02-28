@@ -20,12 +20,13 @@ GNU General Public License for more details.
 #include <linux/proc_fs.h>
 #include <asm/setup.h>
 
+/* for outputing file to filesystem : /data/awb_calibration_data_hboot.txt */
 #include <linux/fs.h>
 #include <linux/syscalls.h>
 
 #define ATAG_MSM_AWB_CAL	0x59504550 
 
-#define AWB_CAL_MAX_SIZE	0x2000U     
+#define AWB_CAL_MAX_SIZE	0x1000U     
 
 struct qct_lsc_struct{
 	unsigned long int	lsc_verify;

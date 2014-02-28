@@ -2110,14 +2110,6 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 	},
 #endif
 #endif /*CONFIG_MSM_SSBI */
-#ifdef CONFIG_MSM_CAMERA
-    {
-		I2C_SURF | I2C_FFA,
-		MSM_GSBI4_QUP_I2C_BUS_ID,
-		msm_camera_boardinfo,
-		ARRAY_SIZE(msm_camera_boardinfo),
-	},
-#endif
 #ifdef CONFIG_TPS65200
 	{
 		I2C_SURF | I2C_FFA,
@@ -2126,7 +2118,7 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 		ARRAY_SIZE(msm_tps_65200_boardinfo),
 	},
 #endif
-#if defined(CONFIG_MSM8X60_AUDIO)
+#if defined(CONFIG_MSM8X60_AUDIO_1X)
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID | I2C_DRAGON,
 		MSM_GSBI7_QUP_I2C_BUS_ID,
@@ -2368,7 +2360,7 @@ static void __init pyramid_init(void)
 	pyramid_init_mmc();
 
 #ifdef CONFIG_MSM_CAMERA
-        msm8x60_init_cam();
+        pyramid_init_cam();
 #endif
 
 	/* Accessory */
@@ -2418,7 +2410,7 @@ static void __init pyramid_init(void)
 
 	BUG_ON(msm_pm_boot_init(&msm_pm_boot_pdata));
 
-#ifdef CONFIG_MSM8X60_AUDIO
+#ifdef CONFIG_MSM8X60_AUDIO_1X
 	spi_register_board_info(msm_spi_board_info, ARRAY_SIZE(msm_spi_board_info));
 	gpio_tlmm_config(msm_spi_gpio[0], GPIO_CFG_ENABLE);
 	gpio_tlmm_config(msm_spi_gpio[1], GPIO_CFG_ENABLE);

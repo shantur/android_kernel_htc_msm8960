@@ -417,7 +417,6 @@ static struct i2c_board_info imx074_actuator_i2c_info = {
 
 static struct msm_actuator_info imx074_actuator_info = {
 	.board_info     = &imx074_actuator_i2c_info,
-	.cam_name   = MSM_ACTUATOR_MAIN_CAM_0,
 	.bus_id         = MSM_GSBI4_QUP_I2C_BUS_ID,
 	.vcm_enable     = 0,
 };
@@ -512,10 +511,10 @@ static struct platform_device msm_camera_server = {
 void __init msm8x60_init_cam(void)
 {
 	platform_device_register(&msm_camera_server);
-	platform_device_register(&msm_device_csic0);
-	platform_device_register(&msm_device_csic1);
-	platform_device_register(&msm_device_vfe);
-	platform_device_register(&msm_device_vpe);
+	platform_device_register(&msm8x60_device_csic0);
+	platform_device_register(&msm8x60_device_csic1);
+	platform_device_register(&msm8x60_device_vfe);
+	platform_device_register(&msm8x60_device_vpe);
 }
 
 #ifdef CONFIG_I2C
